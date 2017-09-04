@@ -1,0 +1,10 @@
+Text RiverBed
+["Goto Riverbank"] go RiverBank
+[goField] go Field
+---
+
+<p>You hike through the tall grass and find yourself in a dried river bed.
+It looks like someone has been stacking rocks.
+There are many pathways to explore, and you can see the river
+through the tall foliage.</p>
+<img src="img/riverbed.jpg">

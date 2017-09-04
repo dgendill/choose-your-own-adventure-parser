@@ -1,0 +1,11 @@
+Text Shelter
+[goPlayground] go Playground
+[goField] go Field
+[goParking] go Parking
+---
+
+<p>You take a seat at one of the six picnic tables.
+There is a playground to your right and an open field to the left.
+There are two grills here and you can see a horseshoe pit nearby.
+</p>
+<img src="img/picnic-tables.jpg">

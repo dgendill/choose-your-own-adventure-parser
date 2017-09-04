@@ -1,0 +1,27 @@
+{
+  "name": "choose-your-own-adventure-parser",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build" : "parallelshell 'npm run sass', 'npm run compile' 'npm run compile-command-line'",
+    "compile": "parallelshell 'pulp build --to dev/main.js'",
+    "compile-w": "pulp --watch build --to dev/main.js",
+    "compile-command-line": "pulp build --main CommandLine --to story-compiler.js",
+    "dev": "parallelshell 'npm run compile-w' 'npm run sass' 'npm run browser-sync'",
+    "sass": "node-sass --watch --include-path scss scss/index.scss dev/style.css",
+    "browser-sync": "browser-sync start  -c bs-config.js",
+    "server": "http-server",
+    "post-install": "npm run build"
+  },
+  "author": "Dominick Gendill",
+  "license": "GPLv3",
+  "dependencies": {
+    "browser-sync": "^2.18.13",
+    "http-server": "^0.10.0",
+    "node-sass": "^4.5.3",
+    "parallelshell": "^3.0.1",
+    "sass": "^1.0.0-beta.2",
+    "yargs": "^8.0.2"
+  }
+}

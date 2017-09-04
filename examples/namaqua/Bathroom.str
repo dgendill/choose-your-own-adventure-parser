@@ -1,0 +1,7 @@
+Text Bathroom
+["Examine Grave", "goto grave", "go grave"] go Sign
+["Go Parking", "goto parking"] go Parking
+---
+
+<p>You walk over to the bathrooms. To your right you see what looks like a grave stone.</p>
+<img src="img/bathrooms.jpg">

@@ -1,0 +1,23 @@
+Text S365dot13
+["Turn Doorknob and Get Out of There!"] go S365dot14500000000004
+["Perform a Spin Kick"] go S43538dot395000000004
+---
+You are in a dark room and can't see anything. You fumble around in the dark and feel a door handle. Suddenly you hear a voice behind you saying, "You're not going anywhere!"
+
+---next---
+
+Text S365dot14500000000004
+["Back to Start"] go S365dot13
+---
+You turn quickly turn the doorknob and a flood of light streams into the room. You start to burn from the light of the sun, and you die.
+
+YOU ARE DEAD
+
+---next---
+
+Text S43538dot395000000004
+["Back to Start"] go S365dot13
+---
+You do a spin kick and knock whoever is behind you to the ground, but you're not fast enough! You die.
+
+YOU ARE DEAD.
