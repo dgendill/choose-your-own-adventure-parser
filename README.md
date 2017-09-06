@@ -1,6 +1,6 @@
-# choose-your-own-adventure-parser
+# Choose Your Own Adventure Parser
 
-Command line tool and codebase for parsing choose your own adventures files. [See here](https://github.com/dgendill/choose-your-own-adventure-maker) for specification and UI for making the files.
+Command line tool and codebase for parsing choose your own adventures files. [See choose-your-own-adventure-maker](https://github.com/dgendill/choose-your-own-adventure-maker) for the file specification and a user interface for making the files.
 
 ### Get Started
 
@@ -20,7 +20,7 @@ This will generate a static website in the dist folder, which you can view by ru
 
 ### JavaScript Library
 
-The compiler can also be used on the front end. Include `dev/main.js` on the page.  To compile...
+The compiler can also be used on the front end. Include `dev/main.js` on the page.  To compile a story...
 
 ```
 PS.Main.compile(text).then(function(parsedStory) {
