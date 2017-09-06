@@ -28,7 +28,10 @@
     "purescript-stringutils": "^0.0.6",
     "purescript-parsing-extras": "^1.0.1",
     "purescript-affjax": "^4.0.0",
-    "purescript-yargs": "^3.0.1"
+    "purescript-yargs": "^3.0.1",
+    "purescript-aff-promise": "^0.7.0",
+    "purescript-mustache": "^2.1.0",
+    "mustache.js": "mustache#^2.3.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0"

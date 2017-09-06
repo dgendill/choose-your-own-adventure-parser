@@ -1,4 +1,4 @@
-module UI.Web where
+module UI.WebOld where
 
 import MyPrelude
 
@@ -10,48 +10,42 @@ import DOM.HTML.HTMLInputElement (setValue)
 import DOM.HTML.HTMLTextAreaElement (value)
 import DOM.Node.Document (createElement)
 import DOM.Node.Element (getAttribute, setAttribute)
-import DOM.Node.Node (textContent)
 import Data.Array (head, mapWithIndex, null)
-import Data.StrMap as StrMap
-import Data.String (joinWith)
 import Data.Traversable (for, traverse)
 import GameBoilerplate (AppCommand(AppCommand), GameState(GameState), NiceCommand, StorageKey(StorageKey), runCommand)
-import HTML (document, prependChild, setDataAttribute, setInnerHTML, toElement, toEventTarget, toNode, unsafeGetElementById)
-import Mustache (MustacheEffect, render)
+import HTML (document, prependChild, setDataAttribute, setInnerHTML, toElement, toEventTarget, unsafeGetElementById)
 import Storage (mkStore)
 import StoryParser (initGame)
 import StoryParser.Types (SerializedConfig)
 import Unsafe.Coerce (unsafeCoerce)
 
-type Effects e = (mustache :: MustacheEffect, now :: NOW, ref :: REF, random :: RANDOM , console :: CONSOLE, dom :: DOM | e)
+type Effects e = (now :: NOW, ref :: REF, random :: RANDOM , console :: CONSOLE, dom :: DOM | e)
 
 setHTMLSuggestions :: forall e c. Array (NiceCommand c) -> Eff (Effects e) Unit
-setHTMLSuggestions niceCommands = do 
-  suggestionTemplate <- textContent =<< toNode <$> unsafeGetElementById "story-suggestion-template"
-  eSuggestions <- unsafeGetElementById "suggestions"
-  eSuggestionsWrapper <- unsafeGetElementById "suggestions-wrapper"
-
+setHTMLSuggestions niceCommands = do
+  suggestionsWrapper <- unsafeGetElementById "suggestions-wrapper"
+  ul <- document >>= createElement "ul"  
   lis <- for (mapWithIndex Tuple niceCommands) \(Tuple i command) -> do
-    render suggestionTemplate (StrMap.fromFoldable [
-      (Tuple "label" command.friendly),
-      (Tuple "index" $ show (i+2))
-    ]) StrMap.empty  
+    li <- document >>= createElement "li"
+    button <- document >>= createElement "button"
+    prependChild li button
+    setInnerHTML button command.friendly
+    setDataAttribute button (fromMaybe "" (head command.aliases))
+    setAttribute "tabindex" (show (i+2)) button
 
-  setInnerHTML eSuggestions (joinWith " " lis)
-
+    pure li
+  void $ traverse (prependChild ul) lis
+  setInnerHTML suggestionsWrapper ""
+  prependChild suggestionsWrapper ul
 
 main :: forall e. SerializedConfig -> Eff (Effects e) Unit
 main config = do
-  storyTemplate <- textContent =<< toNode <$> unsafeGetElementById "story-template"
-  suggestionTemplate <- textContent =<< toNode <$> unsafeGetElementById "story-suggestion-template"
+  suggestionsWrapper <- unsafeGetElementById "suggestions-wrapper"
+  commandArea <- unsafeGetElementById "commandArea"
+  textarea <- unsafeGetElementById "textarea"
+  contentElement <- unsafeGetElementById "content"
   
-  eCommandArea <- unsafeGetElementById "commandArea"
-  eSuggestions <- unsafeGetElementById "suggestions"
-  eContent <- unsafeGetElementById "content"
-  eTextarea <- unsafeGetElementById "textarea"
-  eSuggestionsWrapper <- unsafeGetElementById "suggestions-wrapper"
-
-
+  log "ok"
 
   game@(GameState {
     state : gameRef,
@@ -86,13 +80,15 @@ main config = do
       , command : (AppCommand command)
       } <- webRunCommand (AppCommand { friendly: commandText, raw: commandText})
 
-      r <- render storyTemplate (StrMap.fromFoldable [
-        (Tuple "command" command.friendly),
-        (Tuple "content" text)
-      ]) StrMap.empty
-
-      setValue "" (unsafeCoerce eTextarea)      
-      setInnerHTML eContent r
+      setValue "" (unsafeCoerce textarea)
+      commandElement <- document >>= createElement "b"
+      commandOutput <- document >>= createElement "div"
+      setAttribute "class" "fadein" commandOutput
+      setInnerHTML commandElement command.friendly
+      setInnerHTML commandOutput text 
+      void $ prependChild contentElement commandOutput
+      void $ prependChild contentElement commandElement
+      log text
       pure success
 
   let execAndSaveCommand command = execCommand command >>= case _ of
@@ -108,16 +104,16 @@ main config = do
   
   addEventListener (EventType "submit") (eventListener (\event -> do
     preventDefault event
-    command <- value (unsafeCoerce eTextarea)
+    command <- value (unsafeCoerce textarea)
     execAndSaveCommand command
-  )) false (toEventTarget eCommandArea)
+  )) false (toEventTarget commandArea)
 
   addEventListener (EventType "click") (eventListener (\event -> do
       preventDefault event
       getAttribute "data" (toElement $ target event) >>= case _ of
         Just command -> execAndSaveCommand command          
         Nothing -> pure unit
-  )) false (toEventTarget eSuggestionsWrapper)
+  )) false (toEventTarget suggestionsWrapper)
 
 
   log "Running"

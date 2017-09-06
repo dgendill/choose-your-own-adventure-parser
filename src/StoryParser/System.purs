@@ -3,14 +3,15 @@ module StoryParser.System where
 import Prelude
 
 import Control.Monad.Aff (Aff, attempt)
-import Control.Monad.Eff.Exception (Error, error)
+import Control.Monad.Eff.Exception (Error, error, message)
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (runExcept)
 import Control.Plus (empty)
 import Data.Array (catMaybes, foldMap, zip)
 import Data.Array as Array
+import Data.Bifunctor (lmap)
 import Data.Bifunctor as BF
-import Data.Either (Either(Right, Left), either, isLeft)
+import Data.Either (Either(Right, Left), either, isLeft, note)
 import Data.Foldable (fold)
 import Data.Foreign (ForeignError, renderForeignError)
 import Data.Foreign.Generic (defaultOptions, genericDecodeJSON, genericEncodeJSON)
@@ -23,7 +24,7 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor (rmap)
 import Data.StrMap (StrMap, fromFoldable)
 import Data.String.Utils (endsWith)
-import Data.Traversable (traverse)
+import Data.Traversable (sequence, traverse)
 import Data.Tuple (Tuple(..), snd)
 import Network.HTTP.Affjax (AJAX, get)
 import Node.Encoding (Encoding(..))
@@ -70,24 +71,39 @@ saveGame (From from) (To to) = do
 saveAdventureGame :: forall e. From FilePath -> To FilePath -> Aff (fs :: FS | e) (FSResult String)
 saveAdventureGame (From from) (To to) = do
   story <- readTextFile UTF8 from
-  let stories = toParsedStories <$> flattenStories $ parseManyStories story
-  -- case stories of
-  --   Left err -> eitherToAff stories
-  --   Right s -> do
-  case Array.head stories of
-    Just s -> do  
-      let config = GameConfig {
-            startLocation : (view _name s),
-            aliasGroups : mempty
-          }
-      writeTextFile UTF8 toFile
-        (encode $ SerializedConfig {config, stories})
+  case compileToConfig story of
+    Left err -> throwError $ error $ "Error in '" <> from <> "': " <> (message err)
+    Right config -> do
+      writeTextFile UTF8 toFile (encode config)
       pure $ FSResult $ "Serialized game saved to '" <> toFile <> "'"
-    _ -> throwError $ error $ "There were no story parts in the '" <> from <> "' file."
   where
   encode = genericEncodeJSON defaultOptions
   toFile = to <> "/game.json"
 
+-- | Compile a string and return the SerializedConfig
+-- | or an error.
+compileToConfig :: String -> Either Error SerializedConfig
+compileToConfig story = do
+  stories <- lmap parseErrorToError $ parseManyStories story
+  firstStory <- note noStoryPartsError (Array.head stories)
+  pure $ SerializedConfig {
+      config : GameConfig {
+          startLocation : (view _name firstStory),
+          aliasGroups : mempty
+      },
+      stories : stories
+    }
+  where
+  noStoryPartsError =
+    error $ "No story parts could be parsed from the input."
+
+parseErrorToError :: ParseError -> Error
+parseErrorToError err = error $
+  parseErrorMessage err <> ". " <>
+  (show $ parseErrorPosition err)
+
+  -- where
+  -- stories = parseManyStories story
 
 saveGameDefault  :: forall e. To FilePath -> Aff (fs :: FS | e) (FSResult String)
 saveGameDefault = saveGame (From path)
@@ -149,9 +165,13 @@ getStories path =  Array.concatMap flattenStories <$> map parseIndexedMultipleSt
 -- | After parsing multiple stories from a single file, convert them into
 -- | a standard StoryParserResult
 flattenStories :: Either ParseError (Array ParsedStory) -> Array (Either ParseError ParsedStory)
-flattenStories e = case e of
-  Left err -> [Left err]
-  Right r -> map Right r -- (Array.concatMap (Array.singleton <<< (rmap $ map Right))) <$> 
+flattenStories = sequence
+-- (case e of
+--   Left err -> [Left err]
+--   Right r -> map Right r
+
+unflattenStories :: StoryParserResult -> Either ParseError (Array ParsedStory)
+unflattenStories = sequence
 
 -- | Given a set of parsed stories, construct a StrMap associating
 -- | the user-defined story name to the content.  Ignore any stories

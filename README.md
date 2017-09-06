@@ -16,7 +16,19 @@ For example...
 node story-compiler.js adventure --file examples/ShortStory.str --to dist
 ```
 
-Then you can view the example story in the browser by running `npm run server -- dist`.
+This will generate a static website in the dist folder, which you can view by running `npm run server -- dist`.
+
+### JavaScript Library
+
+The compiler can also be used on the front end. Include `dev/main.js` on the page.  To compile...
+
+```
+PS.Main.compile(text).then(function(parsedStory) {
+  console.log(parsedStory);
+}, function(err) {
+  console.err(err);
+});
+```
 
 ### Development
 
