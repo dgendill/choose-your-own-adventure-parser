@@ -4,19 +4,25 @@ Command line tool and codebase for parsing choose your own adventures files. [Se
 
 ### Get Started
 
-Checkout the repo and run `npm install`. To compile a choose-your-own-adventure-file run
+You'll need to have [pulp](https://github.com/purescript-contrib/pulp) and [PureScript](https://github.com/purescript/documentation/blob/master/guides/Getting-Started.md) installed.
 
 ```
-node story-compiler.js adventure --file path/to/file.str --to dist
+npm install -g purescript pulp
+```
+
+Then checkout the repo and run `npm install` in the project root. Then you can compile a choose-your-own-adventure-file by running...
+
+```
+node compiler.js --file path/to/file.str --to dist
 ```
 
 For example...
 
 ```
-node story-compiler.js adventure --file examples/ShortStory.str --to dist
+node compiler.js --file examples/ShortStory.str --to dist
 ```
 
-This will generate a static website in the dist folder, which you can view by running `npm run server -- dist`.
+This will generate `dist/index.html` which can be viewed directly in the browser.
 
 ### JavaScript Library
 
@@ -35,10 +41,10 @@ PS.Main.compile(text).then(function(parsedStory) {
 To compile the command line tool run...
 
 ```
-npm run compile-command-line
+npm run buildcompiler
 ```
 
-This will create `story-compiler.js` in the root folder.
+This will create `compiler.js` in the root folder.
 
 ---
 

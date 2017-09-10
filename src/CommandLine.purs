@@ -3,7 +3,7 @@ module CommandLine where
 import FSExtra
 import Prelude
 
-import Control.Monad.Aff (launchAff, runAff)
+import Control.Monad.Aff (Aff, finally, launchAff, runAff)
 import Control.Monad.Aff.Class (liftAff)
 import Control.Monad.Aff.Console as AC
 import Control.Monad.Eff (Eff)
@@ -14,6 +14,7 @@ import Control.Monad.Except (runExcept)
 import Data.Array (foldMap, head)
 import Data.Either (Either(..))
 import Data.Foreign (Foreign, readString)
+import Data.Function.Uncurried (Fn2, runFn2)
 import Data.Generic.Rep (class Generic, Argument(Argument), Constructor(Constructor), Sum(Inr, Inl))
 import Data.Maybe (Maybe(..))
 import Data.Monoid (mempty)
@@ -79,25 +80,44 @@ saveAdventureGameEff to template from =
   void $ runAff
     (\e -> EC.error $ message e )
     (\(FSResult r) -> log r)
-    go
+    (go `finally` rmdirRecur (unwrap tmp))
+    
 
   where
+  tmp = To "tmp"
   go = do
     let templateFolder = "templates/" <> template
+    let indexHtml = \path -> path <> "/index.html"
+    let indexHtml = \path -> path <> "/index.html"
+
     templateExists <- exists templateFolder
     case templateExists of 
       true -> do
-        AC.log $ "Copying '" <> templateFolder <> "' to '" <> (unwrap to) <> "' ... "
-        copyDir templateFolder (unwrap to)
+        AC.log $ "Copying '" <> templateFolder <> "' to '" <> (unwrap tmp) <> "' ... "
+        copyDir templateFolder (unwrap tmp)
         AC.log "Done."
 
-        AC.log $ "Copying 'dev/main.js' to '" <> (unwrap to) <> "' ... "
-        copyFile "dev/main.js" ((unwrap to) <> sep <> "main.js")
+        AC.log $ "Copying 'dev/main.js' to '" <> (unwrap tmp) <> "' ... "
+        copyFile "dev/main.js" ((unwrap tmp) <> sep <> "main.js")
         AC.log "Done."
 
         AC.log "Parsing and serializing game..."
-        saveAdventureGame from to
+        r <- saveAdventureGame from tmp
+
+        AC.log $ "Creating '" <> unwrap to <> "' if it doesn't exist."
+        safeMkdir (unwrap to)
+
+        AC.log $ "Creating standalone html file in " <> (unwrap to) <> "..."
+        createStandaloneHtml (From $ unwrap (map indexHtml tmp)) (map indexHtml to)
+
+        pure r
+        
       false -> pure $ FSResult $ templateFolder <> " does not exist."     
+
+foreign import createStandaloneHtmlImpl :: forall e. Fn2 String String (Aff (fs :: FS | e) Unit)
+
+createStandaloneHtml :: forall e. From String -> To String -> Aff (fs :: FS | e) Unit
+createStandaloneHtml (From from) (To to) = runFn2 createStandaloneHtmlImpl from to
 
 
 data Template
@@ -113,8 +133,8 @@ adventureCompiler :: forall e. Eff (exception :: EXCEPTION, buffer :: BUFFER, co
 adventureCompiler = do
   runY mempty $ saveAdventureGameEff <$>
     To <$> (yarg "t" ["to"]
-      (Just "Folder where story should be generated")
-      (Right "You must specify the folder where the generated story will go.")
+      (Just "Folder where output should be generated")
+      (Right "You must specify the folder where the output will be generated.")
       true
     ) <*>
     (yarg "s" ["style"]
@@ -123,7 +143,7 @@ adventureCompiler = do
       false
     ) <*>
     (From <$> (yarg "f" ["file"]
-      (Just "Location of the choose-your-own-adventure .str file.")
+      (Just "Relative path to .str file.")
       (Right "You must specify where the .str file is located.")
       true
     ))
@@ -134,7 +154,7 @@ showCommands = do
 
 main :: forall e. Eff (buffer :: BUFFER, console :: CONSOLE, fs :: FS, exception :: EXCEPTION| e) Unit
 main = do
-  yargsCommand "adventure" showCommands adventureCompiler
+  yargsCommand "adventure" adventureCompiler adventureCompiler
 
 
 data MyCommands

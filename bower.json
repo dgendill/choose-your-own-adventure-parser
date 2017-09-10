@@ -1,5 +1,5 @@
 {
-  "name": "rpg",
+  "name": "",
   "ignore": [
     "**/.*",
     "node_modules",
@@ -30,7 +30,7 @@
     "purescript-affjax": "^4.0.0",
     "purescript-yargs": "^3.0.1",
     "purescript-aff-promise": "^0.7.0",
-    "purescript-mustache": "git://github.com/dgendill/purescript-mustache.git#master"
+    "purescript-mustache": "^3.0.1"
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0"

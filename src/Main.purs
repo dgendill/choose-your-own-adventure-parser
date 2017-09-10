@@ -5,6 +5,7 @@ module Main (
 
 import Prelude
 
+import Control.Alt ((<|>))
 import Control.Monad.Aff (Aff, Canceler, makeAff, runAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
@@ -19,11 +20,12 @@ import Control.Promise as Promise
 import DOM (DOM)
 import Data.Either (either)
 import Data.Function.Uncurried (Fn1, mkFn1)
+import HTML (ready)
+import Mustache (MustacheEffect)
 import Network.HTTP.Affjax (AJAX)
-import StoryParser.System (compileToConfig, loadGameAjax)
+import StoryParser.System (compileToConfig, loadGameAjax, loadGameInline)
 import StoryParser.Types (SerializedConfig(..))
 import UI.Web as Web
-import Mustache (MustacheEffect)
 
 -- import UI.Console as Console
 
@@ -32,9 +34,9 @@ runAffAndShowErrors = runAff (message >>> error) (const $ pure unit)
 
 -- main = Console.main
 main :: forall e. Eff (mustache :: MustacheEffect, ref :: REF, dom :: DOM , now :: NOW , random :: RANDOM , ajax :: AJAX , console :: CONSOLE | e) Unit
-main = void $ runAffAndShowErrors $ do
-  config <- loadGameAjax "game.json"
-  liftEff $ log "Loaded config"
+main = ready $ void $ runAffAndShowErrors $ do
+  config <- loadGameInline "gamejson" <|> loadGameAjax "game.json"
+  liftEff $ log $ "Loaded config" <> (show config)
   liftEff $ Web.main config
 
 -- | Takes a string, and returns a promise to compile

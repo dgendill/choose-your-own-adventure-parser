@@ -4,10 +4,10 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build": "parallelshell 'npm run sass', 'npm run compile' 'npm run compile-command-line'",
-    "compile": "parallelshell 'pulp browserify --to dev/main.js'",
+    "build": "parallelshell 'npm run sass', 'npm run compile' 'npm run buildcompiler'",
+    "compile": "parallelshell 'pulp browserify -O --to dev/main.js'",
     "compile-w": "pulp --watch browserify --to dev/main.js",
-    "compile-command-line": "pulp build --main CommandLine --to story-compiler.js",
+    "buildcompiler": "pulp build --main CommandLine --to compiler.js",
     "dev": "parallelshell 'npm run compile-w' 'npm run sass-w' 'npm run browser-sync'",
     "sass": "node-sass --include-path scss scss/index.scss dev/style.css",
     "sass-w": "npm run sass && npm run sass -- --watch ",
@@ -24,6 +24,7 @@
     "node-sass": "^4.5.3",
     "parallelshell": "^3.0.1",
     "sass": "^1.0.0-beta.2",
+    "standalone-html": "git://github.com/dgendill/standalone-html#master",
     "yargs": "^8.0.2"
   },
   "devDependencies": {

@@ -16,16 +16,18 @@ safeMkdir :: forall eff. FilePath -> Aff (fs :: FS | eff) Unit
 safeMkdir f = exists f >>= (\doesExist -> if (not doesExist) then mkdir f else pure unit)
 
 -- rmdir doesn't remove folders when they're not empty, rmdirRecur does
--- rmdirRecur :: forall eff. FilePath -> Aff (fs :: FS | eff) Unit
--- rmdirRecur d = do 
---   exist <- exists d
---   if (not exist) then pure unit
---                  else do filesToDelete <- readdir d
---                          void $ traverse (\f -> do
---                                       let path = concat [d, f]
---                                       s <- stat path
---                                       if isDirectory s then rmdirRecur path else unlink path ) filesToDelete
---                          rmdir d
+rmdirRecur :: forall eff. FilePath -> Aff (fs :: FS | eff) Unit
+rmdirRecur d = do 
+  exist <- exists d
+  if (not exist)
+    then pure unit
+    else do
+      filesToDelete <- readdir d
+      void $ traverse (\f -> do
+        let path = concat [d, f]
+        s <- stat path
+        if isDirectory s then rmdirRecur path else unlink path ) filesToDelete
+      rmdir d
   
 overWriteFile :: forall eff. FilePath -> Buffer -> Aff (fs :: FS, buffer :: BUFFER | eff) Unit
 overWriteFile f b = do
@@ -34,6 +36,9 @@ overWriteFile f b = do
              else pure unit
   writeFile f b 
 
+-- | Copy the contents of one directory into another, leaving
+-- | the existing files and overwriting files that are in both
+-- | source and target.
 copyDir :: forall eff. FilePath -> FilePath -> Aff (fs :: FS, buffer :: BUFFER | eff) Unit
 copyDir from to = do
   -- rmdir to

@@ -2,11 +2,13 @@ module StoryParser.System where
 
 import Prelude
 
-import Control.Monad.Aff (Aff, attempt)
+import Control.Monad.Aff (Aff, attempt, makeAff)
 import Control.Monad.Eff.Exception (Error, error, message)
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (runExcept)
 import Control.Plus (empty)
+import DOM (DOM)
+import DOM.Node.Node (textContent)
 import Data.Array (catMaybes, foldMap, zip)
 import Data.Array as Array
 import Data.Bifunctor (lmap)
@@ -18,7 +20,7 @@ import Data.Foreign.Generic (defaultOptions, genericDecodeJSON, genericEncodeJSO
 import Data.Function (applyFlipped)
 import Data.Lens.Getter (view)
 import Data.List.Types (NonEmptyList)
-import Data.Maybe (Maybe(Just, Nothing))
+import Data.Maybe (Maybe(..))
 import Data.Monoid (mempty)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor (rmap)
@@ -26,6 +28,7 @@ import Data.StrMap (StrMap, fromFoldable)
 import Data.String.Utils (endsWith)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (Tuple(..), snd)
+import HTML (getElementById, toNode)
 import Network.HTTP.Affjax (AJAX, get)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (FS, readTextFile, readdir, writeTextFile)
@@ -51,8 +54,10 @@ file = path <> "/game.json"
 
 newtype From a = From a
 derive instance newtypeFrom :: Newtype (From a) _
+derive instance functorFrom :: Functor From
 newtype To a = To a
 derive instance newtypeTo :: Newtype (To a) _
+derive instance functorTo :: Functor To
 
 -- | Parse the files in a folder and
 -- | serialize them into a json file.
@@ -116,6 +121,13 @@ loadGame =  readTextFile UTF8 file >>= decodeConfig
 -- | Load the serialized game via ajax
 loadGameAjax :: forall e. String -> Aff (ajax :: AJAX | e) SerializedConfig
 loadGameAjax path = get path <#> _.response >>= decodeConfig
+
+loadGameInline :: forall e. String -> Aff (dom :: DOM | e) SerializedConfig
+loadGameInline id = decodeConfig =<< makeAff \err success -> do
+  getElementById id >>= case _ of
+    Just e -> success =<< textContent (toNode e)
+    Nothing -> err $ error $ "Could not find element with id '" <> id <> "'."
+    
 
 -- | Decode the serialized game into a data type
 decodeConfig :: forall e. String -> Aff e SerializedConfig

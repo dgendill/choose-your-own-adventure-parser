@@ -6,9 +6,8 @@
 /.psc*
 /.purs*
 /.psa*
-/dev/main.js
-/dev/style.css
-/story-compiler.js
+/compiler.js
 /img-big
 /dist
-/dev/game.json
+/dev
+/tmp
